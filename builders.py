@@ -92,6 +92,52 @@ class Stage1Builder(base_builders.LLVMBuilder):
         return proj
 
     @property
+    def cflags(self) -> List[str]:
+        cflags = super().cflags
+        # Native Arch optimization
+        cflags.append('-march=native')
+        cflags.append('-mtune=native')
+        # Performance level optimization
+        cflags.append('-O3')
+        # Misc
+        cflags.append('-falign-functions=32')
+        cflags.append('-fno-math-errno')
+        cflags.append('-fno-trapping-math')
+        cflags.append('-fomit-frame-pointer')
+        # Polly optimization
+        cflags.append('-fopenmp')
+        cflags.append('-mllvm -polly')
+        cflags.append('-mllvm -polly-ast-use-context')
+        cflags.append('-mllvm -polly-dependences-analysis-type=value-based')
+        cflags.append('-mllvm -polly-dependences-computeout=0')
+        cflags.append('-mllvm -polly-enable-delicm')
+        cflags.append('-mllvm -polly-invariant-load-hoisting')
+        cflags.append('-mllvm -polly-loopfusion-greedy')
+        cflags.append('-mllvm -polly-num-threads=0')
+        cflags.append('-mllvm -polly-omp-backend=LLVM')
+        cflags.append('-mllvm -polly-optimizer=isl')
+        cflags.append('-mllvm -polly-parallel')
+        cflags.append('-mllvm -polly-postopts')
+        cflags.append('-mllvm -polly-reschedule')
+        cflags.append('-mllvm -polly-run-dce')
+        cflags.append('-mllvm -polly-run-inliner')
+        cflags.append('-mllvm -polly-scheduling-chunksize=1')
+        cflags.append('-mllvm -polly-scheduling=dynamic')
+        cflags.append('-mllvm -polly-tiling')
+        cflags.append('-mllvm -polly-vectorizer=stripmine')
+        # LLVM transformation passes
+        cflags.append('-mllvm -aggressive-ext-opt')
+        cflags.append('-mllvm -allow-unroll-and-jam')
+        cflags.append('-mllvm -enable-loop-distribute')
+        cflags.append('-mllvm -enable-loop-flatten')
+        cflags.append('-mllvm -enable-loopinterchange')
+        cflags.append('-mllvm -enable-unroll-and-jam')
+        cflags.append('-mllvm -extra-vectorizer-passes')
+        cflags.append('-mllvm -interleave-small-loop-scalar-reduction')
+        cflags.append('-mllvm -unroll-runtime-multi-exit')
+        return cflags
+
+    @property
     def ldflags(self) -> List[str]:
         ldflags = super().ldflags
         if self._config.target_os.is_darwin:
@@ -103,6 +149,8 @@ class Stage1Builder(base_builders.LLVMBuilder):
             # runtime.
             # [1] libc++ in our case, despite the flag saying -static-libstdc++.
             ldflags.append('-static-libstdc++')
+
+        ldflags.append('-Wl,-O3,--sort-common,--as-needed,-z,now,--strip-debug')
 
         return ldflags
 
@@ -194,12 +242,21 @@ class Stage2Builder(base_builders.LLVMBuilder):
                 ldflags.append('-Wl,-rpath,\$ORIGIN/../lib/x86_64-unknown-linux-gnu')
         # '$ORIGIN/../lib' is added by llvm's CMake rules.
         if self.bolt_optimize or self.bolt_instrument:
-            ldflags.append('-Wl,-q')
+            ldflags.append('-Wl,-znow')
+            ldflags.append('-Wl,--emit-relocs')
         # TODO: Turn on ICF for Darwin once it can be built with LLD.
         if not self._config.target_os.is_darwin:
             ldflags.append('-Wl,--icf=safe')
+        if (self.lto and
+                not self._config.target_os.is_darwin and
+                not self.build_instrumented and
+                not self.debug_build):
+            cflags.append('-Wl,--lto-O3')
         if self.lto and self.enable_mlgo:
             ldflags.append('-Wl,-mllvm,-regalloc-enable-advisor=release')
+
+        ldflags.append('-Wl,-O3,--sort-common,--as-needed,-z,now,--strip-debug')
+
         return ldflags
 
     @property
@@ -210,6 +267,56 @@ class Stage2Builder(base_builders.LLVMBuilder):
             cflags.append('-Wno-profile-instr-unprofiled')
         if not self.lto and self.enable_mlgo:
             cflags.append('-mllvm -regalloc-enable-advisor=release')
+        # Generic X86 Arch optimization
+        cflags.append('-march=x86-64')
+        cflags.append('-mtune=generic')
+        # Performance level optimization
+        cflags.append('-O3')
+        # Misc
+        cflags.append('-falign-functions=32')
+        cflags.append('-fno-math-errno')
+        cflags.append('-fno-trapping-math')
+        cflags.append('-fomit-frame-pointer')
+        cflags.append('-mharden-sls=none')
+        # Polly optimization
+        cflags.append('-fopenmp')
+        cflags.append('-mllvm -polly')
+        cflags.append('-mllvm -polly-ast-use-context')
+        cflags.append('-mllvm -polly-dependences-analysis-type=value-based')
+        cflags.append('-mllvm -polly-dependences-computeout=0')
+        cflags.append('-mllvm -polly-enable-delicm')
+        cflags.append('-mllvm -polly-invariant-load-hoisting')
+        cflags.append('-mllvm -polly-loopfusion-greedy')
+        cflags.append('-mllvm -polly-num-threads=0')
+        cflags.append('-mllvm -polly-omp-backend=LLVM')
+        cflags.append('-mllvm -polly-optimizer=isl')
+        cflags.append('-mllvm -polly-parallel')
+        cflags.append('-mllvm -polly-postopts')
+        cflags.append('-mllvm -polly-reschedule')
+        cflags.append('-mllvm -polly-run-dce')
+        cflags.append('-mllvm -polly-run-inliner')
+        cflags.append('-mllvm -polly-scheduling-chunksize=1')
+        cflags.append('-mllvm -polly-scheduling=dynamic')
+        cflags.append('-mllvm -polly-tiling')
+        cflags.append('-mllvm -polly-vectorizer=stripmine')
+        # LLVM transformation passes
+        cflags.append('-mllvm -aggressive-ext-opt')
+        cflags.append('-mllvm -allow-unroll-and-jam')
+        cflags.append('-mllvm -enable-loop-distribute')
+        cflags.append('-mllvm -enable-loop-flatten')
+        cflags.append('-mllvm -enable-loopinterchange')
+        cflags.append('-mllvm -enable-unroll-and-jam')
+        cflags.append('-mllvm -extra-vectorizer-passes')
+        cflags.append('-mllvm -interleave-small-loop-scalar-reduction')
+        cflags.append('-mllvm -unroll-runtime-multi-exit')
+        cflags.append('-mllvm -enable-chr')
+
+        if (self.lto and
+                not self._config.target_os.is_darwin and
+                not self.build_instrumented and
+                not self.debug_build):
+            cflags.append('-fsplit-lto-unit')
+
         return cflags
 
     @property
