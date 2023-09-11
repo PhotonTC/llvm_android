@@ -101,8 +101,6 @@ class Stage1Builder(base_builders.LLVMBuilder):
         cflags.append('-O3')
         # Misc
         cflags.append('-falign-functions=32')
-        cflags.append('-fno-math-errno')
-        cflags.append('-fno-trapping-math')
         cflags.append('-fomit-frame-pointer')
         # Polly optimization
         cflags.append('-fopenmp')
@@ -274,10 +272,7 @@ class Stage2Builder(base_builders.LLVMBuilder):
         cflags.append('-O3')
         # Misc
         cflags.append('-falign-functions=32')
-        cflags.append('-fno-math-errno')
-        cflags.append('-fno-trapping-math')
         cflags.append('-fomit-frame-pointer')
-        cflags.append('-mharden-sls=none')
         # Polly optimization
         cflags.append('-fopenmp')
         cflags.append('-mllvm -polly')
