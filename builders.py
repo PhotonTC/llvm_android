@@ -94,9 +94,6 @@ class Stage1Builder(base_builders.LLVMBuilder):
     @property
     def cflags(self) -> List[str]:
         cflags = super().cflags
-        # Native Arch optimization
-        cflags.append('-march=native')
-        cflags.append('-mtune=native')
         # Performance level optimization
         cflags.append('-O3')
         # Misc
@@ -265,9 +262,6 @@ class Stage2Builder(base_builders.LLVMBuilder):
             cflags.append('-Wno-profile-instr-unprofiled')
         if not self.lto and self.enable_mlgo:
             cflags.append('-mllvm -regalloc-enable-advisor=release')
-        # Generic X86 Arch optimization
-        cflags.append('-march=x86-64')
-        cflags.append('-mtune=generic')
         # Performance level optimization
         cflags.append('-O3')
         # Misc
