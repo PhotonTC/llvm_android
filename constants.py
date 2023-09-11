@@ -31,4 +31,4 @@ HOST_TARGETS: Set[str] = set(['X86'])
 DARWIN_HOST_TARGETS: Set[str] = set(['X86', 'AArch64'])
 
 # Targets for Android.
-ANDROID_TARGETS: Set[str] = set(['AArch64', 'ARM', 'BPF', 'WebAssembly', 'X86'])
+ANDROID_TARGETS: Set[str] = set(['AArch64', 'ARM', 'BPF', 'RISCV', 'WebAssembly', 'X86'])
